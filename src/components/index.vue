@@ -7,7 +7,16 @@
         <div class="header_msg_right_div">
           <div class="header_msg_right_son_div"><el-button class="header_text" type="text" icon="el-icon-message-solid"></el-button></div>
           <div class="header_msg_right_son_div block"><el-avatar :size="32" :src="circleUrl"></el-avatar></div>
-          <div class="header_msg_right_son_div header_text">系统管理员</div>
+          <div class="header_msg_right_son_div header_text">
+            <el-dropdown @command="handleCommand">
+              <span class="el-dropdown-link">
+                {{loginUser.name}}
+              </span>
+              <el-dropdown-menu split-button="true" slot="dropdown">
+                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
         </div>
       </div>
     </el-header>
@@ -38,55 +47,59 @@
         <el-main>
           <router-view></router-view>
         </el-main>
-        <el-footer>Footer</el-footer>
       </el-container>
     </el-container>
   </el-container>
 </template>
 <script>
-//let express = require('express');
-//let routerss = express.Router();
+import common from "@/resource/common";
+import router from "@/router/login";
 export default {
-  name: "Index",
+  name: "index",
   data () {
     return {
       circleUrl: "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png",
       isCollapse: false,
       asideWidth:"240px",
-      menus:[
-        {
-          icon:'el-icon-coin',
-          title:'数据库工具',
-          submenu:[
-            {
-              title:'表配置',
-              filename:'tableconfig',
-              parameter:''
-            },
-            {
-              title:'菜单配置',
-              filename:'menuconfig',
-              parameter:''
-            },
-          ]
-        }
-      ]
+      menus:[],
+      loginUser:{}
     }
   },
-  mounted() {
-    //routerss.post('/addUser', (req, res) => { });
+  created(){//加载菜单
+    let that = this;
+    that.axios.get('/index/getMenus').then((response) => {
+      if(that.sessionStore.state.menuTree.menuTree.length<1){
+        common.addRoutes(router,response.data)
+        that.sessionStore.commit('setMenuTree',response.data)
+      }
+      that.menus = response.data;
+      that.loginUser = that.sessionStore.state.loginUser.loginUser;
+    })
   },
   methods:{
     goRouter(submenu){
-      //console.log(submenu);
-      this.$router.push({path:'/api/index'+submenu.filename})
+      this.$router.push({path:'/index/'+submenu.filename})
     },
     togleCollapse() {
       this.isCollapse = !this.isCollapse;
     },
-    menuClick(contents,name){
-      console.log(contents)
-      console.log(name)
+    handleCommand(command){
+      let that = this;
+      switch (command) {
+        case 'logout':
+          this.$confirm('确认退出登录, 是否继续?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            that.sessionStore.commit('setMenuTree', [])
+            that.sessionStore.commit('setLoginUser', {})
+            router.push('/login')
+          }).catch(() => {});
+          return;
+      }
+
+
     }
   }
 }
@@ -140,7 +153,7 @@ export default {
 }
 .el-main{
   padding: 30px;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 60px);
 }
 /*------自定义导航菜单样式-----*/
 .el-submenu .el-menu-item{

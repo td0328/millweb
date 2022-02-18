@@ -2,19 +2,18 @@ import Vue from 'vue';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import App from './App.vue';
-
-import VueRouter from 'vue-router';
-import routers from './routers';
-
-Vue.use(VueRouter);
+import axios from 'axios';
+import store from './store/index';
+import router from './router/login';
+import config from './resource/config';
 Vue.use(ElementUI);
 
-const router = new VueRouter({
-  mode: 'history',
-  routes: routers
-})
+Vue.prototype.axios = axios;
+Vue.prototype.sessionStore = store;
+
+axios.defaults.baseURL = config.baseURL;
 new Vue({
   el: '#app',
   router,
-  render: h => h(App)
+  render: h => h(App),
 });
